@@ -34,7 +34,7 @@ function create_backup_file() {
   rm -rf $tmpdumpdir
   mkdir $tmpdumpdir
   tmpdumpfile=backup.sql
-  docker exec $mysql_cid mysqldump -hlocalhost --protocol=tcp -u$MYSQLUSER -p$MYSQLPW --compact --databases tester > $tmpdumpdir/$tmpdumpfile
+  docker exec $mysql_cid pg_dump -hlocalhost --protocol=tcp -u$MYSQLUSER -p$MYSQLPW --compact --databases tester > $tmpdumpdir/$tmpdumpfile
   tar -C $tmpdumpdir -cvf - $tmpdumpfile | gzip > ${target}
   cat $target | docker run --label mysqltest --name mysqlbackup-data-source -i --rm -v ${BACKUP_VOL}:/backups -e DEBUG=${DEBUG} ${BACKUP_TESTER_IMAGE} save_dump
   rm -rf $tmpdumpdir $target

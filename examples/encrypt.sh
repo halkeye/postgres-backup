@@ -7,7 +7,7 @@
 #
 # to use, mount in /scripts.d/post-backup/secure.sh
 #
-# the symmetric encryption key should be mounted in /scripts.d/post-backup/mysqldump-key.pub.pem
+# the symmetric encryption key should be mounted in /scripts.d/post-backup/pg_dump-key.pub.pem
 
 # Encrypt and chmod backup file.
 if [[ -n "$DB_DUMP_DEBUG" ]]; then
@@ -16,7 +16,7 @@ fi
 
 if [ -e ${DUMPFILE} ];
 then
-  openssl smime -encrypt -binary -text -aes256 -in ${DUMPFILE} -out ${DUMPFILE}.enc -outform DER /scripts.d/post-backup/mysqldump-key.pub.pem
+  openssl smime -encrypt -binary -text -aes256 -in ${DUMPFILE} -out ${DUMPFILE}.enc -outform DER /scripts.d/post-backup/pg_dump-key.pub.pem
   mv ${DUMPFILE}.enc ${DUMPFILE}
   chmod 600 ${DUMPFILE}
 else

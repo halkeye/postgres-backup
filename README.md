@@ -1,8 +1,12 @@
-# mysql-backup
-Back up mysql databases to... anywhere!
+# postgres-backup
+
+Back up postgres databases to... anywhere!
 
 ## Overview
-mysql-backup is a simple way to do MySQL database backups and restores when the database is running in a container.
+
+Fork of https://github.com/halkeye/postgres-backup to handle postgres
+
+postgres-backup is a simple way to do MySQL database backups and restores when the database is running in a container.
 
 It has the following features:
 
@@ -15,17 +19,14 @@ It has the following features:
 
 Please see [CONTRIBUTORS.md](./CONTRIBUTORS.md) for a list of contributors.
 
-## Support
-
-Support is available at the [databack Slack channel](http://databack.slack.com); register [here](https://join.slack.com/t/databack/shared_invite/zt-1cnbo2zfl-0dQS895icOUQy31RAruf7w). We accept issues here and general support questions on Slack.
-
 ## Backup
-To run a backup, launch `mysql-backup` image as a container with the correct parameters. Everything is controlled by environment variables passed to the container.
+
+To run a backup, launch `postgres-backup` image as a container with the correct parameters. Everything is controlled by environment variables passed to the container.
 
 For example:
 
 ````bash
-docker run -d --restart=always -e DB_DUMP_FREQ=60 -e DB_DUMP_BEGIN=2330 -e DB_DUMP_TARGET=/db -e DB_SERVER=my-db-container -v /local/file/path:/db databack/mysql-backup
+docker run -d --restart=always -e DB_DUMP_FREQ=60 -e DB_DUMP_BEGIN=2330 -e DB_DUMP_TARGET=/db -e DB_SERVER=my-db-container -v /local/file/path:/db halkeye/postgres-backup
 ````
 
 The above will run a dump every 60 minutes, beginning at the next 2330 local time, from the database accessible in the container `my-db-container`.
@@ -39,8 +40,8 @@ __You should consider the [use of `--env-file=`](https://docs.docker.com/engine/
 * `DB_USER`: username for the database
 * `DB_PASS`: password for the database
 * `DB_NAMES`: names of databases to dump (separated by space); defaults to all databases in the database server
-* `DB_NAMES_EXCLUDE`: names of databases (separated by space) to exclude from the dump; `information_schema`. `performance_schema`, `sys` and `mysql` are excluded by default. This only applies if `DB_DUMP_BY_SCHEMA` is set to `true`. For example, if you set `DB_NAMES_EXCLUDE=database1 db2` and `DB_DUMP_BY_SCHEMA=true` then these two databases will not be dumped by mysqldump
-* `SINGLE_DATABASE`: If is set to `true`, mysqldump command will run without `--databases` flag. This avoid `USE <database>;` statement which is useful for the cases in which you want to import the dumpfile into a database with a different name.
+* `DB_NAMES_EXCLUDE`: names of databases (separated by space) to exclude from the dump; `information_schema`. `performance_schema`, `sys` and `mysql` are excluded by default. This only applies if `DB_DUMP_BY_SCHEMA` is set to `true`. For example, if you set `DB_NAMES_EXCLUDE=database1 db2` and `DB_DUMP_BY_SCHEMA=true` then these two databases will not be dumped by pg_dump
+* `SINGLE_DATABASE`: If is set to `true`, pg_dump command will run on a single database.
 * `DB_DUMP_FREQ`: How often to do a dump, in minutes. Defaults to 1440 minutes, or once per day.
 * `DB_DUMP_BEGIN`: What time to do the first dump. Defaults to immediate. Must be in one of two formats:
     * Absolute: HHMM, e.g. `2330` or `0415`
@@ -64,9 +65,9 @@ __You should consider the [use of `--env-file=`](https://docs.docker.com/engine/
 * `SMB_PASS`: SMB password. May also be specified in `DB_DUMP_TARGET` with an `smb://` url. If both specified, this variable overrides the value in the URL.
 * `COMPRESSION`: Compression to use. Supported are: `gzip` (default), `bzip2`
 * `DB_DUMP_BY_SCHEMA`: Whether to use separate files per schema in the compressed file (`true`), or a single dump file (`false`). Defaults to `false`.
-* `DB_DUMP_KEEP_PERMISSIONS`: Whether to keep permissions for a file target. By default, `mysql-backup` copies the backup compressed file to the target with `cp -a`. In certain filesystems with certain permissions, this may cause errors. You can disable the `-a` flag by setting `DB_DUMP_KEEP_PERMISSIONS=false`. Defaults to `true`.
-* `MYSQLDUMP_OPTS`: A string of options to pass to `mysqldump`, e.g. `MYSQLDUMP_OPTS="--opt abc --param def --max_allowed_packet=123455678"` will run `mysqldump --opt abc --param def --max_allowed_packet=123455678`
-* `NICE`: true to perform mysqldump with ionice and nice option:- check for more information :- http://eosrei.net/articles/2013/03/forcing-mysqldump-always-be-nice-cpu-and-io
+* `DB_DUMP_KEEP_PERMISSIONS`: Whether to keep permissions for a file target. By default, `postgres-backup` copies the backup compressed file to the target with `cp -a`. In certain filesystems with certain permissions, this may cause errors. You can disable the `-a` flag by setting `DB_DUMP_KEEP_PERMISSIONS=false`. Defaults to `true`.
+* `PGDUMP_OPTS`: A string of options to pass to `pg_sql`, e.g. `PGDUMP_OPTS="--opt abc --param def --max_allowed_packet=123455678"` will run `pg_dump --opt abc --param def --max_allowed_packet=123455678`
+* `NICE`: true to perform pg_dump with ionice and nice option:- check for more information :- http://eosrei.net/articles/2013/03/forcing-mysqldump-always-be-nice-cpu-and-io
 * `TMP_PATH`: tmp directory to be used during backup creation and other operations. Optional, defaults to `/tmp`
 
 ### Scheduling
@@ -108,10 +109,10 @@ In this case, you have two options:
 
 
 ### Database Container
-In order to perform the actual dump, `mysql-backup` needs to connect to the database container. You **must** pass the database hostname - which can be another container or any database process accessible from the backup container - by passing the environment variable `DB_SERVER` with the hostname or IP address of the database. You **may** override the default port of `3306` by passing the environment variable `DB_PORT`.
+In order to perform the actual dump, `postgres-backup` needs to connect to the database container. You **must** pass the database hostname - which can be another container or any database process accessible from the backup container - by passing the environment variable `DB_SERVER` with the hostname or IP address of the database. You **may** override the default port of `3306` by passing the environment variable `DB_PORT`.
 
 ````bash
-docker run -d --restart=always -e DB_USER=user123 -e DB_PASS=pass123 -e DB_DUMP_FREQ=60 -e DB_DUMP_BEGIN=2330 -e DB_DUMP_TARGET=/db -e DB_SERVER=my-db-container -v /local/file/path:/db databack/mysql-backup
+docker run -d --restart=always -e DB_USER=user123 -e DB_PASS=pass123 -e DB_DUMP_FREQ=60 -e DB_DUMP_BEGIN=2330 -e DB_DUMP_TARGET=/db -e DB_SERVER=my-db-container -v /local/file/path:/db halkeye/postgres-backup
 ````
 
 ### Dump Target
@@ -225,7 +226,7 @@ docker run -d --restart=always -e DB_USER=user123 -e DB_PASS=pass123 -e DB_DUMP_
   -v /path/to/pre-backup/scripts:/scripts.d/pre-backup \
   -v /path/to/post-backup/scripts:/scripts.d/post-backup \
   -v /local/file/path:/db \
-  databack/mysql-backup
+  halkeye/postgres-backup
 ````
 
 Or, if you prefer compose:
@@ -234,7 +235,7 @@ Or, if you prefer compose:
 version: '2.1'
 services:
   backup:
-    image: databack/mysql-backup
+    image: halkeye/postgres-backup
     restart: always
     volumes:
      - /local/file/path:/db
@@ -252,7 +253,7 @@ services:
     ....
 ```
 
-The scripts are _executed_ in the [entrypoint](https://github.com/databack/mysql-backup/blob/master/entrypoint) script, which means it has access to all exported environment variables. The following are available, but we are happy to export more as required (just open an issue or better yet, a pull request):
+The scripts are _executed_ in the [entrypoint](https://github.com/halkeye/postgres-backup/blob/master/entrypoint) script, which means it has access to all exported environment variables. The following are available, but we are happy to export more as required (just open an issue or better yet, a pull request):
 
 * `DUMPFILE`: full path in the container to the output file
 * `NOW`: date of the backup, as included in `DUMPFILE` and given by `date -u +"%Y-%m-%dT%H:%M:%SZ"`
@@ -283,7 +284,7 @@ fi
 
 ````
 
-You can think of this as a sort of basic plugin system. Look at the source of the [entrypoint](https://github.com/databack/mysql-backup/blob/master/entrypoint) script for other variables that can be used.
+You can think of this as a sort of basic plugin system. Look at the source of the [entrypoint](https://github.com/halkeye/postgres-backup/blob/master/entrypoint) script for other variables that can be used.
 
 ### Encrypting the Backup
 
@@ -295,7 +296,7 @@ to encrypt your backup with AES256.
 
 ## Restore
 ### Dump Restore
-If you wish to run a restore to an existing database, you can use mysql-backup to do a restore.
+If you wish to run a restore to an existing database, you can use postgres-backup to do a restore.
 
 You need only the following environment variables:
 
@@ -314,15 +315,15 @@ __You should consider the [use of `--env-file=`](https://docs.docker.com/engine/
 
 Examples:
 
-1. Restore from a local file: `docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=/backup/db_backup_201509271627.gz -v /local/path:/backup databack/mysql-backup`
-2. Restore from an SMB file: `docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=smb://smbserver/share1/backup/db_backup_201509271627.gz databack/mysql-backup`
-3. Restore from an S3 file: `docker run -e DB_SERVER=gotodb.example.com -e AWS_ACCESS_KEY_ID=awskeyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=eu-central-1 -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=s3://bucket/path/db_backup_201509271627.gz databack/mysql-backup`
+1. Restore from a local file: `docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=/backup/db_backup_201509271627.gz -v /local/path:/backup halkeye/postgres-backup`
+2. Restore from an SMB file: `docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=smb://smbserver/share1/backup/db_backup_201509271627.gz halkeye/postgres-backup`
+3. Restore from an S3 file: `docker run -e DB_SERVER=gotodb.example.com -e AWS_ACCESS_KEY_ID=awskeyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=eu-central-1 -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=s3://bucket/path/db_backup_201509271627.gz halkeye/postgres-backup`
 
 ### Restore when using docker-compose
 `docker-compose` automagically creates a network when started. `docker run` simply attaches to the bridge network. If you are trying to communicate with a mysql container started by docker-compose, you'll need to specify the network in your command arguments. You can use `docker network ls` to see what network is being used, or you can declare a network in your docker-compose.yml.
 
 #### Example:
-`docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=/backup/db_backup_201509271627.gz -v /local/path:/backup --network="skynet" databack/mysql-backup`
+`docker run -e DB_SERVER=gotodb.example.com -e DB_USER=user123 -e DB_PASS=pass123 -e DB_RESTORE_TARGET=/backup/db_backup_201509271627.gz -v /local/path:/backup --network="skynet" halkeye/postgres-backup`
 
 ### Using docker (or rancher) secrets
 Environment variables used in this image can be passed in files as well. This is useful when you are using docker (or rancher) secrets for storing sensitive information.
@@ -337,7 +338,7 @@ docker run -d \
   -e DB_USER_FILE=/run/secrets/DB_USER \
   -e DB_PASS_FILE=/run/secrets/DB_PASS \
   -v /local/file/path:/db \
-  databack/mysql-backup
+  halkeye/postgres-backup
 ```
 
 ### Restore pre and post processing
@@ -354,7 +355,7 @@ the db backup and a second tarball with the contents of a WordPress install on
 For an example take a look at the post-backup examples, all variables defined for post-backup scripts are available for pre-processing too. Also don't forget to add the same host volumes for `pre-restore` and `post-restore` directories as described for post-backup processing.
 
 ### Automated Build
-This github repo is the source for the mysql-backup image. The actual image is stored on the docker hub at `databack/mysql-backup`, and is triggered with each commit to the source by automated build via Webhooks.
+This github repo is the source for the postgres-backup image. The actual image is stored on the docker hub at `halkeye/postgres-backup`, and is triggered with each commit to the source by automated build via Webhooks.
 
 There are 2 builds: 1 for version based on the git tag, and another for the particular version number.
 

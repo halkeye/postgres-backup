@@ -90,6 +90,11 @@ function uri_parser() {
 # execute actual backup
 #
 function do_dump() {
+  export PGHOST="${DB_SERVER}"
+  export PGPORT="${DB_PORT}"
+  export PGPASSWORD="${DB_PASS}"
+  export PGUSER="${DB_USER}"
+
   # what is the name of our source and target?
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   # SOURCE: file that the uploader looks for when performing the upload
@@ -125,11 +130,11 @@ function do_dump() {
   fi
   if [ -n "$DB_DUMP_BY_SCHEMA" -a "$DB_DUMP_BY_SCHEMA" = "true" ]; then
     if [[ -z "$DB_NAMES" ]]; then
-      DB_NAMES=$(mysql -h $DB_SERVER -P $DB_PORT $DBUSER $DBPASS -N -e 'show databases')
+      DB_NAMES=$(psql -l -d defaultdb -q --no-align -t | grep '|' | awk -F'|' '{print $1}')
       [ $? -ne 0 ] && return 1
     fi
     if [ -z "$DB_NAMES_EXCLUDE" ]; then
-      DB_NAMES_EXCLUDE="information_schema performance_schema mysql sys"
+      DB_NAMES_EXCLUDE="_dodb defaultdb template0 template1"
     fi
     declare -A exclude_list
     for i in $DB_NAMES_EXCLUDE; do
@@ -140,7 +145,7 @@ function do_dump() {
         # skip db if it is in the exclude list
         continue
       fi
-      $NICE_CMD mysqldump -h $DB_SERVER -P $DB_PORT $DBUSER $DBPASS --databases ${onedb} $MYSQLDUMP_OPTS > $workdir/${onedb}_${now}.sql
+      $NICE_CMD pg_dump ${onedb} $PGDUMP_OPTS > $workdir/${onedb}_${now}.sql
       [ $? -ne 0 ] && return 1
     done
   else
@@ -152,7 +157,7 @@ function do_dump() {
     else
       DB_LIST="-A"
     fi
-    $NICE_CMD mysqldump -h $DB_SERVER -P $DB_PORT $DBUSER $DBPASS $DB_LIST $MYSQLDUMP_OPTS > $workdir/backup_${now}.sql
+    $NICE_CMD pg_dumpall $PGDUMP_OPTS > $workdir/backup_${now}.sql
     [ $? -ne 0 ] && return 1
   fi
   tar -C $workdir -cvf - . | $COMPRESS > ${TMPDIR}/${SOURCE}

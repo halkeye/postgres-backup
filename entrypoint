@@ -44,7 +44,7 @@ if [[ -n "$DB_DUMP_DEBUG" ]]; then
 fi
 
 # ensure it is defined
-MYSQLDUMP_OPTS=${MYSQLDUMP_OPTS:-}
+PGDUMP_OPTS=${PGDUMP_OPTS:-}
 
 # login credentials
 if [ -n "${DB_USER}" ]; then
