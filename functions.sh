@@ -128,13 +128,13 @@ function do_dump() {
   if [ "$NICE" = "true" ]; then
     NICE_CMD="nice -n19 ionice -c2"
   fi
+  if [ -z "$DB_NAMES_EXCLUDE" ]; then
+    DB_NAMES_EXCLUDE="_dodb defaultdb template0 template1"
+  fi
   if [ -n "$DB_DUMP_BY_SCHEMA" -a "$DB_DUMP_BY_SCHEMA" = "true" ]; then
     if [[ -z "$DB_NAMES" ]]; then
       DB_NAMES=$(psql -l -d defaultdb -q --no-align -t | grep '|' | awk -F'|' '{print $1}')
       [ $? -ne 0 ] && return 1
-    fi
-    if [ -z "$DB_NAMES_EXCLUDE" ]; then
-      DB_NAMES_EXCLUDE="_dodb defaultdb template0 template1"
     fi
     declare -A exclude_list
     for i in $DB_NAMES_EXCLUDE; do
@@ -157,7 +157,7 @@ function do_dump() {
     else
       DB_LIST="-A"
     fi
-    $NICE_CMD pg_dumpall $PGDUMP_OPTS > $workdir/backup_${now}.sql
+    $NICE_CMD pg_dumpall "--exclude-database=$(echo $DB_NAMES_EXCLUDE | tr ' ' '|')" $PGDUMP_OPTS > $workdir/backup_${now}.sql
     [ $? -ne 0 ] && return 1
   fi
   tar -C $workdir -cvf - . | $COMPRESS > ${TMPDIR}/${SOURCE}
