@@ -1,10 +1,9 @@
 # mysql backup image
-FROM alpine:3.17
+FROM alpine:3.19.1
 LABEL org.opencontainers.image.authors="https://github.com/halkeye"
 
-RUN apk add --no-cache --update postgresql-client postgresql15-client postgresql16-client bash python3 py3-pip samba-client shadow openssl coreutils && \
-    touch /etc/samba/smb.conf && \
-    pip3 install awscli
+RUN apk add --no-cache --update postgresql-client postgresql15-client postgresql16-client bash python3 samba-client shadow openssl coreutils aws-cli && \
+    touch /etc/samba/smb.conf
 
 # set us up to run as non-root user
 RUN groupadd -g 1005 appuser && \
