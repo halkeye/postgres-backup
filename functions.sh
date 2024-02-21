@@ -95,6 +95,8 @@ function do_dump() {
   export PGPASSWORD="${DB_PASS}"
   export PGUSER="${DB_USER}"
 
+  PG_DUMP_PATH="${PG_DUMP_PATH:-pg_dump}"
+
   # what is the name of our source and target?
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   # SOURCE: file that the uploader looks for when performing the upload
@@ -146,7 +148,7 @@ function do_dump() {
         # skip db if it is in the exclude list
         continue
       fi
-      $NICE_CMD pg_dump ${onedb} $PGDUMP_OPTS > $workdir/${onedb}_${now}.sql
+      $NICE_CMD ${PG_DUMP_PATH} ${onedb} $PGDUMP_OPTS > $workdir/${onedb}_${now}.sql
       [ $? -ne 0 ] && return 1
     done
   else
