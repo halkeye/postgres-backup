@@ -2,7 +2,7 @@
 FROM alpine:3.17
 LABEL org.opencontainers.image.authors="https://github.com/halkeye"
 
-RUN apk add --no-cache --update postgresql-client postgresql15-client bash python3 py3-pip samba-client shadow openssl coreutils && \
+RUN apk add --no-cache --update postgresql-client postgresql15-client postgresql16-client bash python3 py3-pip samba-client shadow openssl coreutils && \
     touch /etc/samba/smb.conf && \
     pip3 install awscli
 
