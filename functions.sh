@@ -124,16 +124,17 @@ function do_dump() {
   rm -rf $workdir
   mkdir -p $workdir
   NICE_CMD=
+  DB_DEFAULT="${DB_DEFAULT:-defaultdb}"
   # if we asked to do by schema, then we need to get a list of all of the databases, take each, and then tar and zip them
   if [ "$NICE" = "true" ]; then
     NICE_CMD="nice -n19 ionice -c2"
   fi
   if [ -z "$DB_NAMES_EXCLUDE" ]; then
-    DB_NAMES_EXCLUDE="_dodb defaultdb template0 template1"
+    DB_NAMES_EXCLUDE="_dodb ${DB_DEFAULT} template0 template1"
   fi
   if [ -n "$DB_DUMP_BY_SCHEMA" -a "$DB_DUMP_BY_SCHEMA" = "true" ]; then
     if [[ -z "$DB_NAMES" ]]; then
-      DB_NAMES=$(psql -l -d defaultdb -q --no-align -t | grep '|' | awk -F'|' '{print $1}')
+      DB_NAMES=$(psql -l -d "${DB_DEFAULT}" -q --no-align -t | grep '|' | awk -F'|' '{print $1}')
       [ $? -ne 0 ] && return 1
     fi
     declare -A exclude_list
